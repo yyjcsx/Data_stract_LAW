@@ -1,0 +1,8 @@
+# 忽略Office文件
+*.xlsx
+*.xls
+*.csv
+
+# 忽略Excel临时文件
+~$*.xlsx
+~$*.xls
