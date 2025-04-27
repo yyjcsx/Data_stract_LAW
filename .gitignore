@@ -2,7 +2,7 @@
 *.xlsx
 *.xls
 *.csv
-
+*.txt
 # 忽略Excel临时文件
 ~$*.xlsx
 ~$*.xls

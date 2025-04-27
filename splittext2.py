@@ -120,14 +120,3 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
     return df
 
 
-if __name__ == "__main__":
-    # 测试用法律文本
-    test_text = '''
-'''
-
-    # 调用函数
-    result_df = legal_text_to_dataframe(test_text)
-
-    # 打印结果
-    print("提取结果：")
-    print(result_df)
