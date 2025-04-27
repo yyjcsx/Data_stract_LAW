@@ -6,3 +6,7 @@
 # 忽略Excel临时文件
 ~$*.xlsx
 ~$*.xls
+
+# 新增Python缓存忽略规则
+__pycache__/
+*.py[cod]
