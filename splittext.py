@@ -6,7 +6,7 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
     """
     将法律文本按条目抽取为DataFrame
     :param text: 输入的法律文本内容（字符串）
-    :return: 包含条目目录和内容的DataFrame
+    :return: 包含法条索引和内容的DataFrame
     """
     # 定义条目匹配正则（支持 第X条/第XX条/第X款/第X项 等格式）
     entry_pattern = re.compile(
@@ -39,13 +39,13 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
     for block in blocks:
         first_line = block.split('\n')[0] if '\n' in block else block
         if entry_pattern.match(first_line):
-            # 解析条目目录
+            # 解析法条索引
             entry_header = entry_pattern.search(first_line).group()
             entry_content = re.sub(entry_pattern, '', block, count=1).strip()
             entry_content = re.sub(r'\s+', ' ', entry_content)  # 合并连续空白
             
             result.append({
-                "条目目录": entry_header.strip(),
+                "法条索引": entry_header.strip(),
                 "条目内容": entry_content
             })
         else:
@@ -56,7 +56,7 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
         combined_other = ' '.join(other_content)
         combined_other = re.sub(r'\s+', ' ', combined_other).strip()
         result.append({
-            "条目目录": "其它内容",
+            "法条索引": "其它内容",
             "条目内容": combined_other if combined_other else ""
         })
 
@@ -64,7 +64,7 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
     df = pd.DataFrame(result)
     
     # 新增处理状态判断
-    if len(df) == 1 and df.iloc[0]['条目目录'] == '其它内容':
+    if len(df) == 1 and df.iloc[0]['法条索引'] == '其它内容':
         df['处理状态'] = '仅含其他内容'
     else:
         df['处理状态'] = '正常处理'

@@ -3,6 +3,7 @@
 *.xls
 *.csv
 *.txt
+*.rar
 # 忽略Excel临时文件
 ~$*.xlsx
 ~$*.xls

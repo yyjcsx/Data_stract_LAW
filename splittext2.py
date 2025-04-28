@@ -21,8 +21,14 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
     )
 
     # 定义编、章、节匹配正则
-    volume_pattern = re.compile(r'^第(?:[零一二三四五六七八九十百千万]+|\d+)编', re.MULTILINE)
-    chapter_pattern = re.compile(r'^第(?:[零一二三四五六七八九十百千万]+|\d+)章', re.MULTILINE)
+    volume_pattern = re.compile(
+        r'^(第(?:[零一二三四五六七八九十百千万]+|\d+)编)\s*(.*)',
+        re.MULTILINE
+    )
+    chapter_pattern = re.compile(
+        r'^(第(?:[零一二三四五六七八九十百千万]+|\d+)章)\s*(.*)',
+        re.MULTILINE
+    )
     section_pattern = re.compile(r'^第(?:[零一二三四五六七八九十百千万]+|\d+)节', re.MULTILINE)
 
     # 分割文本为条目块和非条目块
@@ -47,52 +53,105 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
     volume_count = 0
     chapter_count = 0
     section_count = 0
+    
+    # 修改结构层级变量初始化
+    current_volume = {"index": 0, "name": "", "content": "", "number": ""}
+    current_chapter = {"index": 0, "name": "", "content": "", "number": ""}
+    current_section = {"index": 0, "name": "", "content": "", "number": ""}
 
     for block in blocks:
         first_line = block.split('\n')[0] if '\n' in block else block
         if volume_pattern.match(first_line):
-            volume_count += 1
-            chapter_count = 0
-            section_count = 0
+            # 处理编层级
+            current_volume["index"] += 1
+            match = volume_pattern.match(first_line)
+            current_volume["name"] = match.group(2)  # 获取"总则"部分
+            current_volume["number"] = match.group(1)  # 获取"第1编"
+            content = block.replace(match.group(0), '').strip()
+            
             result.append({
-                "条目目录": volume_pattern.search(first_line).group(),
-                "条目内容": re.sub(volume_pattern, '', block, count=1).strip(),
-                "编目数": volume_count,
-                "章目数": chapter_count,
-                "节目数": section_count
+                "编索引": current_volume["number"],
+                "编名称": current_volume["name"],
+                "章索引": "",
+                "章名称": "",
+                "节索引": "",
+                "节名称": "",
+                "条目目录": "",
+                "条目内容": content
             })
+
         elif chapter_pattern.match(first_line):
-            chapter_count += 1
-            section_count = 0
+            # 处理章层级
+            current_chapter["index"] += 1
+            match = chapter_pattern.match(first_line)
+            current_chapter["name"] = match.group(2)  # 获取"基本原则"
+            current_chapter["number"] = match.group(1)  # 获取"第1章"
+            content = block.replace(match.group(0), '').strip()
+            
             result.append({
-                "条目目录": chapter_pattern.search(first_line).group(),
-                "条目内容": re.sub(chapter_pattern, '', block, count=1).strip(),
-                "编目数": volume_count,
-                "章目数": chapter_count,
-                "节目数": section_count
+                "编索引": current_volume["number"],
+                "编名称": current_volume["name"],
+                "章索引": current_chapter["number"],
+                "章名称": current_chapter["name"],
+                "节索引": "",
+                "节名称": "",
+                "条目目录": "",
+                "条目内容": content
             })
-        elif section_pattern.match(first_line):
-            section_count += 1
-            result.append({
-                "条目目录": section_pattern.search(first_line).group(),
-                "条目内容": re.sub(section_pattern, '', block, count=1).strip(),
-                "编目数": volume_count,
-                "章目数": chapter_count,
-                "节目数": section_count
-            })
+
         elif entry_pattern.match(first_line):
-            # 解析条目目录
+            # 处理条目（强制填充层级信息）
             entry_header = entry_pattern.search(first_line).group()
             entry_content = re.sub(entry_pattern, '', block, count=1).strip()
-            entry_content = re.sub(r'\s+', ' ', entry_content)  # 合并连续空白
-
+            
             result.append({
+                "编索引": current_volume["number"],
+                "编名称": current_volume["name"],
+                "章索引": current_chapter["number"] if current_chapter["index"] > 0 else "",
+                "章名称": current_chapter["name"] if current_chapter["index"] > 0 else "",
+                "节索引": current_section["number"] if current_section["index"] > 0 else "",
+                "节名称": current_section["name"] if current_section["index"] > 0 else "",
+                "条目目录": entry_header.strip(),
+                "条目内容": entry_content
+            })
+            
+        elif section_pattern.match(first_line):
+            # 处理节层级
+            current_section["index"] += 1
+            current_section["name"] = section_pattern.search(first_line).group()
+            current_section["content"] = re.sub(section_pattern, '', block, count=1).strip()
+            
+            result.append({
+                "编索引": current_volume["index"],
+                "编名称": current_volume["name"],
+                "章索引": current_chapter["index"],
+                "章名称": current_chapter["name"],
+                "节索引": current_section["index"],
+                "节名称": current_section["name"],
+                "节目录内容": current_section["content"],
+                "条目目录": "",
+                "条目内容": ""
+            })
+            
+        elif entry_pattern.match(first_line):
+            # 处理条目（保持原有逻辑并添加层级信息）
+            entry_header = entry_pattern.search(first_line).group()
+            entry_content = re.sub(entry_pattern, '', block, count=1).strip()
+            
+            result.append({
+                "编索引": current_volume["index"],
+                "编名称": current_volume["name"],
+                "章索引": current_chapter["index"],
+                "章名称": current_chapter["name"],
+                "节索引": current_section["index"],
+                "节名称": current_section["name"],
                 "条目目录": entry_header.strip(),
                 "条目内容": entry_content,
-                "编目数": volume_count,
-                "章目数": chapter_count,
-                "节目数": section_count
+                "编目录内容": "",
+                "章目录内容": "",
+                "节目录内容": ""
             })
+            
         else:
             other_content.append(block)
 
@@ -108,8 +167,14 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
             "节目数": 0
         })
 
+    # 转换为DataFrame前过滤空条目
+    filtered_result = [
+        entry for entry in result 
+        if not (entry["条目目录"] == "" and entry["条目内容"] == "")
+    ]
+
     # 转换为DataFrame
-    df = pd.DataFrame(result)
+    df = pd.DataFrame(filtered_result)
 
     # 新增处理状态判断
     if len(df) == 1 and df.iloc[0]['条目目录'] == '其它内容':
