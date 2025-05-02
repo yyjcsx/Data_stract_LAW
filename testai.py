@@ -2,7 +2,7 @@ from openai import OpenAI
 import json
 from typing import List, Dict
 import pandas as pd
-client = OpenAI(api_key="sk-7131415e0904415287e26c7a990a5451", base_url="https://api.deepseek.com")
+client = OpenAI(api_key="", base_url="https://api.deepseek.com")
  
 # 定义系统提示
 system_prompt = "你是一个数据抽取方面的大师"

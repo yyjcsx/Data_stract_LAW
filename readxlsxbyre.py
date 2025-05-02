@@ -41,7 +41,7 @@ def read_law_excel(file_path):
 
 # 修改保存逻辑，在最后保存带标记的原始文件
 if __name__ == "__main__":
-    excel_path = "0428_2.xlsx"
+    excel_path = "BIG_data.xlsx"
     law_df = read_law_excel(excel_path)
     
     if not law_df.empty:
@@ -117,6 +117,11 @@ if __name__ == "__main__":
                     file_path = os.path.join(folder_path, f"{name}.xlsx")
                     
                     with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
+                        # 在保存前直接修改列名
+                        df = df.rename(columns={
+                            "条目目录": "法条索引",
+                            "条目内容": "法条内容"
+                        })
                         df.to_excel(writer, index=False, sheet_name=name)
                         
                         # 获取工作表和设置可见性 (xlsxwriter方式)
