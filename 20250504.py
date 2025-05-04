@@ -1,9 +1,10 @@
+#新增：分类1- 2-的内容
 import pandas as pd
 # from openai import OpenAI
 import json
 from typing import List, Dict
 import pandas as pd
-from splittext2 import legal_text_to_dataframe
+from splittext3 import legal_text_to_dataframe
 import os
 error_log = "error_log.txt"
 undoxlsxflag = False
@@ -41,7 +42,7 @@ def read_law_excel(file_path):
 
 # 修改保存逻辑，在最后保存带标记的原始文件
 if __name__ == "__main__":
-    excel_path = "D:\LAW_py\Data_stract_LAW\\数字加顿号.xlsx"
+    excel_path = "D:\LAW_py\Data_stract_LAW\\0数字加顿号.xlsx"
     law_df = read_law_excel(excel_path)
     
     if not law_df.empty:
@@ -60,25 +61,24 @@ if __name__ == "__main__":
             
         
 
-            name = row[1][:30]  # 截取前30个字符
-            content = row[11] 
+            name = row.iloc[1][:30]  # 使用iloc替代直接索引
+            content = row.iloc[11] 
             print(name)
             result_df = legal_text_to_dataframe(content)
 
             # 添加法律元数据到结果DataFrame
             meta_data = {
-                "标题": row[0],
-                "法律名词": row[1],
-                "发布文号": row[2],
-                "机构": row[3],
-                "类别": row[4],
-                "发布日期": row[5],
-                "实施日期": row[6],
-                "有效性": row[7],
-                "效力级别": row[8],
-                "省份": row[9],
-                "所属年份": row[10],
-                
+                "标题": row.iloc[0],
+                "法律名词": row.iloc[1],
+                "发布文号": row.iloc[2],
+                "机构": row.iloc[3],
+                "类别": row.iloc[4],
+                "发布日期": row.iloc[5],
+                "实施日期": row.iloc[6],
+                "有效性": row.iloc[7],
+                "效力级别": row.iloc[8],
+                "省份": row.iloc[9],
+                "所属年份": row.iloc[10],
             }
             
             # 将元数据合并到每个条目
@@ -109,13 +109,24 @@ if __name__ == "__main__":
             if pd.isnull(law_df.loc[row.name, '问题标签']) or law_df.loc[row.name, '问题标签'] == '':  # 只在无问题标签时生成
                 try:
                     # 新增文件夹创建逻辑
-                    efficacy_level = row[8]  # 获取效力级别
-                    folder_path = f"./{efficacy_level}"
+                    efficacy_level = str(row.iloc[8]) if pd.notnull(row.iloc[8]) else "其他"
+                    # 替换原有路径生成逻辑
+                    folder_path = os.path.abspath(os.path.join(".", efficacy_level))  # 使用绝对路径
+                    print(f"当前工作目录:{folder_path}")
                     os.makedirs(folder_path, exist_ok=True)
                     
                     # 修改文件保存路径
                     file_path = os.path.join(folder_path, f"{name}.xlsx")
                     
+                    # 在os.makedirs前添加权限检查
+                    try:
+                        test_file = os.path.join(folder_path, "test.txt")
+                        with open(test_file, 'w') as f:
+                            f.write("test")
+                        os.remove(test_file)
+                        print("目录写入权限正常")
+                    except Exception as e:
+                        print(f"目录写入权限异常: {str(e)}")
                     with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
                         # 在保存前直接修改列名
                         df = df.rename(columns={
