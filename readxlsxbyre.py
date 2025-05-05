@@ -41,7 +41,7 @@ def read_law_excel(file_path):
 
 # 修改保存逻辑，在最后保存带标记的原始文件
 if __name__ == "__main__":
-    excel_path = "D:\LAW_py\Data_stract_LAW\\数字加顿号.xlsx"
+    excel_path = "D:\LAW_py\Data_stract_LAW\\20250428 陈煜明 全国法律法规-样本-2600份-2015年.xlsx"
     law_df = read_law_excel(excel_path)
     
     if not law_df.empty:

@@ -1,1 +1,1 @@
-folder_path = os.path.abspath(os.path.join(".", efficacy_level))  # 使用绝对路径
+ 数据最大长度

@@ -2,37 +2,73 @@ import re
 import pandas as pd
 from typing import List, Dict
 
-def legal_text_to_dataframe(text: str) -> pd.DataFrame:
+def legal_text_to_dataframe1(text: str) -> pd.DataFrame:
     """
     将法律文本按条目抽取为DataFrame
     :param text: 输入的法律文本内容（字符串）
     :return: 包含条目目录和内容的DataFrame
     """
-    # 定义条目匹配正则（支持 第X条/第X款/第X项 等格式）
-    entry_pattern = re.compile(
-        r'''
-        ^\s*                # 行首可能的空白
-        第                  # 固定起始字
-        (?:[零一二三四五六七八九十百千万]+|\d+)  # 数字（中文/阿拉伯）
-        (条|款|项)          # 条目类型
-        \s*[:：]?\s*        # 可能的分隔符（冒号/空格）
-        ''',
-        re.VERBOSE | re.MULTILINE
-    )
-    item_pattern = re.compile(
-        r'^\s*([一二三四五六七八九十]+)[、.]\s*(.*)',
+    # 定义中文数字加顿号匹配正则（支持一到十的中文数字）
+    chinese_num_pattern = re.compile(
+        r'^\s*([一二三四五六七八九十]+)[、]\s*(.*)',
         re.MULTILINE
     )
-    # 定义编、章、节匹配正则
-    volume_pattern = re.compile(
-        r'^(第(?:[零一二三四五六七八九十百千万]+|\d+)编)\s*(.*)',
-        re.MULTILINE
-    )
-    chapter_pattern = re.compile(
-        r'^(第(?:[零一二三四五六七八九十百千万]+|\d+)章)\s*(.*)',
-        re.MULTILINE
-    )
-    section_pattern = re.compile(r'^第(?:[零一二三四五六七八九十百千万]+|\d+)节', re.MULTILINE)
+    
+    entries = []
+    current_entry = None
+    
+    for line in text.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+            
+        # 匹配中文数字加顿号格式
+        match = chinese_num_pattern.match(line)
+        if match:
+            if current_entry:
+                entries.append(current_entry)
+            current_entry = {
+                '条目目录': f"{match.group(1)}、",
+                '条目内容': match.group(2),
+                '处理状态': '有效条目'
+            }
+        elif current_entry:
+            # 追加到当前条目内容
+            current_entry['条目内容'] += '\n' + line
+    
+    if current_entry:
+        entries.append(current_entry)
+    
+    # 创建DataFrame
+    df = pd.DataFrame(entries if entries else [{
+        '条目目录': '',
+        '条目内容': text,
+        '处理状态': '仅含其他内容'
+    }])
+    
+    return df
+    # # 定义条目匹配正则（支持 第X条/第X款/第X项 等格式）
+    # entry_pattern = re.compile(
+    #     r'''
+    #     ^\s*                # 行首可能的空白
+    #     第                  # 固定起始字
+    #     (?:[零一二三四五六七八九十百千万]+|\d+)  # 数字（中文/阿拉伯）
+    #     (条|款|项)          # 条目类型
+    #     \s*[:：]?\s*        # 可能的分隔符（冒号/空格）
+    #     ''',
+    #     re.VERBOSE | re.MULTILINE
+    # )
+
+    # # 定义编、章、节匹配正则
+    # volume_pattern = re.compile(
+    #     r'^(第(?:[零一二三四五六七八九十百千万]+|\d+)编)\s*(.*)',
+    #     re.MULTILINE
+    # )
+    # chapter_pattern = re.compile(
+    #     r'^(第(?:[零一二三四五六七八九十百千万]+|\d+)章)\s*(.*)',
+    #     re.MULTILINE
+    # )
+    # section_pattern = re.compile(r'^第(?:[零一二三四五六七八九十百千万]+|\d+)节', re.MULTILINE)
 
     # 分割文本为条目块和非条目块
     blocks = []
@@ -134,23 +170,6 @@ def legal_text_to_dataframe(text: str) -> pd.DataFrame:
                 "节目录内容": current_section["content"],
                 "条目目录": "",
                 "条目内容": ""
-            })
-            
-        elif item_pattern.match(first_line):
-            # 处理"一、二、"格式的条目
-            match = item_pattern.match(first_line)
-            item_number = match.group(1)
-            item_content = match.group(2)
-            
-            result.append({
-                "编索引": current_volume["number"],
-                "编名称": current_volume["name"],
-                "章索引": current_chapter["number"] if current_chapter["index"] > 0 else "",
-                "章名称": current_chapter["name"] if current_chapter["index"] > 0 else "",
-                "节索引": current_section["number"] if current_section["index"] > 0 else "",
-                "节名称": current_section["name"] if current_section["index"] > 0 else "",
-                "条目目录": f"第{item_number}项",
-                "条目内容": item_content
             })
             
         elif entry_pattern.match(first_line):
