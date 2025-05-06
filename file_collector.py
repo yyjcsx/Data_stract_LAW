@@ -30,3 +30,9 @@ if __name__ == "__main__":
     output_path = "processed_files.xlsx"
     df.to_excel(output_path, index=False, engine='openpyxl')
     print(f"处理完成！共收集 {len(df)} 个文件，结果已保存至：{output_path}")
+
+'''
+已经处理的数量187695个
+1.4G文件数量共计192700条
+还有5005条没有处理
+'''
