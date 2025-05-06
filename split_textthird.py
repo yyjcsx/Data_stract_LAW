@@ -3,11 +3,12 @@ import pandas as pd
 import json
 from typing import List, Dict
 import pandas as pd
-from splittext2 import legal_text_to_dataframe
+from splittext4 import legal_text_to_dataframe1
 import os
 import warnings
-generated_files = []
 warnings.filterwarnings('ignore', category=FutureWarning)
+
+
 error_log = "error_log.txt"
 undoxlsxflag = False
 def read_law_excel(file_path):
@@ -27,9 +28,9 @@ def read_law_excel(file_path):
         
 
         # 添加遍历功能示例
-        #print("开始遍历法律条目：")
-        #for index, row in df.iterrows():
-            #print(f"\n条目 {index + 1}:")
+        print("开始遍历法律条目：")
+        for index, row in df.iterrows():
+            print(f"\n条目 {index + 1}:")
            
         
         return df
@@ -44,13 +45,10 @@ def read_law_excel(file_path):
 
 # 修改保存逻辑，在最后保存带标记的原始文件
 if __name__ == "__main__":
-    excel_path = "test.xlsx"
+    excel_path = "third.xlsx"
     law_df = read_law_excel(excel_path)
     
     if not law_df.empty:
-        # 新增成功计数器
-        success_count = 0
-        
         # 新增问题标签列
         law_df['问题标签'] = ''
         
@@ -59,7 +57,7 @@ if __name__ == "__main__":
         
         # 仅遍历符合条件的条目
         for _, row in law_df.iterrows():
-            #print(f"正在处理：{row['标题']}")
+            print(f"正在处理：{row['标题']}")
             # print(f"Article Number：{row['ArticleNumber']}")
             
             # print(f"Effective Date：{row['EffectiveDate'].strftime('%Y-%m-%d') if pd.notnull(row['EffectiveDate']) else 'N/A'}")
@@ -68,8 +66,8 @@ if __name__ == "__main__":
 
             name = row[1][:30]  # 截取前30个字符
             content = row[11] 
-            #print(name)
-            result_df = legal_text_to_dataframe(content)
+            print(name)
+            result_df = legal_text_to_dataframe1(content)
 
             # 添加法律元数据到结果DataFrame
             meta_data = {
@@ -94,15 +92,15 @@ if __name__ == "__main__":
             # 转换为 DataFrame
             if not result_df.empty:
                 df = result_df
-                #print(df[["条目目录", "条目内容"]].head())
+                print(df[["条目目录", "条目内容"]].head())
                 
                 # 新增问题标签处理逻辑
                 if '处理状态' in df.columns:
                     problem_rows = df[df['处理状态'] == '仅含其他内容']
                     if not problem_rows.empty:
                         original_index = row.name
-                        law_df.loc[original_index, '问题标签'] = '不是按照条分类的'
-                        #print(f"标记问题行：{original_index}")
+                        law_df.loc[original_index, '问题标签'] = '不是按照中文数字加顿号加括号分类的'
+                        print(f"标记问题行：{original_index}")
                         undoxlsxflag = True
             else:
                 print("数据为空或解析失败")
@@ -145,8 +143,6 @@ if __name__ == "__main__":
                             worksheet.set_column(i, i, max_len + 2)
 
                     print(f"文件已成功生成：{file_path}")
-                    generated_files.append(file_path)  # 记录生成路径
-                    success_count += 1
                 except Exception as e:
                     print(f"生成Excel文件时出错：{str(e)}")
                     with open(error_log, 'a', encoding='utf-8') as f:
@@ -159,9 +155,3 @@ if __name__ == "__main__":
         marked_path = excel_path.replace(".xlsx", "_marked.xlsx")
         law_df.to_excel(marked_path, index=False, engine='openpyxl')
         print(f"已生成标记文件：{marked_path}")
-
-        # 循环结束后输出统计结果
-        print(f"\n成功生成文件总数：{success_count}")
-# 在程序最后添加
-with open("generated_files.log", "w", encoding="utf-8") as f:
-    f.write("\n".join(generated_files))

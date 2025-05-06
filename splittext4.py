@@ -11,7 +11,7 @@ def legal_text_to_dataframe1(text: str) -> pd.DataFrame:
     # 定义中文数字加顿号匹配正则（支持一到十的中文数字）
     # 修改entry_pattern正则表达式
     entry_pattern = re.compile(
-        r'^\s*([一二三四五六七八九十]+、)',  # 仅匹配中文数字加顿号
+        r'^\s*\(([一二三四五六七八九十]+)\)',  # 匹配带括号的中文数字
         re.MULTILINE
     )
     
